@@ -1,0 +1,259 @@
+body {
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  text-align: center;
+  background: linear-gradient(135deg, #f4fbf6 0%, #e8f7ec 50%, #dcf2e3 100%);
+  background-attachment: fixed;
+  margin: 0;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+#loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.container {
+  width: 100%;
+  max-width: 460px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(27, 67, 50, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  padding: 32px 28px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #1b4332;
+  letter-spacing: -0.5px;
+  position: relative;
+  display: inline-block;
+}
+
+h1::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 3px;
+  background-color: #52b788;
+  border-radius: 2px;
+  margin: 6px auto 0;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 24px 0 16px;
+  color: #1b4332;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.section-title::before,
+.section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: #d1e7dd;
+}
+
+.grade-display {
+  background-color: #eaf6ee;
+  border: 1px solid #d1e7dd;
+  border-radius: 16px;
+  padding: 22px 20px;
+  margin-bottom: 24px;
+}
+
+.grade-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  color: #40916c;
+}
+
+#projectedGrade {
+  font-size: 44px;
+  font-weight: 900;
+  color: #081c15;
+  margin: 4px 0 8px;
+  letter-spacing: -1px;
+}
+
+#letterGrade {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b4332;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: #1f2937;
+}
+
+input {
+  font-family: inherit;
+  font-size: 14px;
+  color: #1f2937;
+  border: 1.5px solid #dcdcdc;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+input:hover {
+  border-color: #52b788;
+}
+
+input:focus {
+  border-color: #2d6a4f;
+  box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.25);
+}
+
+.input-medium {
+  padding: 8px 12px;
+  width: 120px;
+  text-align: center;
+}
+
+.input-small {
+  padding: 6px 10px;
+  width: 80px;
+  text-align: center;
+}
+
+.homework-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.input-name {
+  padding: 8px 12px;
+  flex: 2;
+}
+
+.input-score {
+  padding: 8px 12px;
+  flex: 1.2;
+  text-align: center;
+}
+
+#addHwBtn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 18px;
+  background-color: #1b4332;
+  color: #ffffff;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(27, 67, 50, 0.15);
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+#addHwBtn:hover {
+  background-color: #2d6a4f;
+}
+
+#addHwBtn:active {
+  transform: translateY(0);
+}
+
+.btn-remove {
+  background-color: #e65353;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.btn-remove:hover {
+  background-color: #c53030;
+}
+
+.padding-right-12 {
+  padding-right: 12px;
+}
+
+.padding-right-32 {
+  padding-right: 32px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

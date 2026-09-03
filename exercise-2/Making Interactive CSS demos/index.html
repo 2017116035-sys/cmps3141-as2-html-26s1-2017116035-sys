@@ -1,0 +1,544 @@
+<!--CMPS3141-HCI - AS2-26S1
+Collaborators: None
+Date:03/09/26
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSS Grid Generator</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <div id="app">
+    <div class="workspace">
+      <!-- Controls Panel -->
+      <aside class="controls-panel">
+        <h3>Grid Settings</h3>
+
+        <div class="control-group">
+          <label>Columns Count</label>
+          <input type="number" v-model.number="columnsCount" min="1" max="12" />
+        </div>
+
+        <div class="control-group">
+          <label>Rows Count</label>
+          <input type="number" v-model.number="rowsCount" min="1" max="12" />
+        </div>
+
+        <div class="control-group">
+          <label>Gap (px)</label>
+          <input type="number" v-model.number="gap" min="0" max="50" />
+        </div>
+
+        <hr class="divider" />
+
+        <h3>Export Dimensions</h3>
+
+        <label class="checkbox-group">
+          <input type="checkbox" v-model="isFullPage" />
+          <span>Scale to Entire Page (100vh)</span>
+        </label>
+
+        <div v-if="!isFullPage" class="container-dimensions">
+          <div class="control-group">
+            <label>Container Width</label>
+            <input type="text" v-model="containerWidth" placeholder="e.g. 100%, 800px" />
+          </div>
+
+          <div class="control-group">
+            <label>Container Height</label>
+            <input type="text" v-model="containerHeight" placeholder="e.g. 500px, 80vh" />
+          </div>
+        </div>
+
+        <button type="button" class="reset-btn" @click="resetGrid">Reset Grid</button>
+      </aside>
+
+      <!-- Center Grid Viewport Panel -->
+      <main 
+        class="grid-viewport" 
+        ref="viewportRef"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+      >
+        <div 
+          class="grid-container"
+          :style="{
+            gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rowsCount}, minmax(0, 1fr))`,
+            gap: `${gap}px`
+          }"
+        >
+          <div 
+            v-for="tile in visibleTiles" 
+            :key="tile.id" 
+            :data-tile-id="tile.id"
+            class="grid-item"
+            :class="{ 
+              active: selectedTileIds.has(tile.id),
+              'drag-over': isTileInDragBox(tile)
+            }"
+            :style="{
+              gridColumnStart: tile.col,
+              gridColumnEnd: `span ${tile.colSpan}`,
+              gridRowStart: tile.row,
+              gridRowEnd: `span ${tile.rowSpan}`
+            }"
+          >
+            <div>{{ tile.labelNumber }}</div>
+            <span v-if="columnsCount <= 8 && rowsCount <= 8" class="dim">{{ tile.colSpan }}x{{ tile.rowSpan }}</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Code Generators -->
+      <div class="code-panels-container">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <h3>Generated CSS</h3>
+            <button 
+              class="copy-icon-btn" 
+              :class="{ copied: isCssCopied }" 
+              @click="copyToClipboard(generatedCss, 'css')"
+              :title="isCssCopied ? 'Copied!' : 'Copy CSS'"
+            >
+              <svg v-if="isCssCopied" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
+          </div>
+          <pre><code>{{ generatedCss }}</code></pre>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <h3>Generated HTML</h3>
+            <button 
+              class="copy-icon-btn" 
+              :class="{ copied: isHtmlCopied }" 
+              @click="copyToClipboard(generatedHtml, 'html')"
+              :title="isHtmlCopied ? 'Copied!' : 'Copy HTML'"
+            >
+              <svg v-if="isHtmlCopied" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
+          </div>
+          <pre><code>{{ generatedHtml }}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Overview & Documentation -->
+    <div class="app-description">
+      <h1>App Overview &amp; Key Features</h1>
+      
+      <p>
+        This interactive playground lets you visually build, experiment with, and master CSS Grid layouts in real time. Configure row and column tracks, drag across cells to merge grid regions, and instantly copy clean, boilerplate code HTML and CSS code for your projects.
+      </p>
+
+      <ul>
+        <li>
+          <strong>Interactive Layout Designer:</strong> Configure up to 12 rows and columns with custom gaps, then drag across adjacent cells to merge them into custom layout regions.
+        </li>
+        <li>
+          <strong>Rapid Wireframing:</strong> Prototype complex dashboard views, image galleries, landing page content blocks, and app layouts without writing code by hand.
+        </li>
+        <li>
+          <strong>Real-Time Code Generator:</strong> Instantly view and export generated HTML markup and CSS stylesheets.
+        </li>
+      </ul>
+
+      <section class="grid-explanation">
+        <h2>How to Use</h2>
+
+        <div class="explanation-cards explanation-cards-spacing">
+          <div class="card card-full-width">
+            <ul>
+              <li><strong>1. Set Dimensions:</strong> Adjust columns, rows, and gap in the left panel.</li>
+              <li><strong>2. Set Output Scaling:</strong> Check "Scale to Entire Page" for full viewport generation or specify custom width/height values.</li>
+              <li><strong>3. Merge Cells:</strong> Click and drag across adjacent tiles in the viewport to combine them.</li>
+              <li><strong>4. Export Code:</strong> Click the copy button in the panel headers to get your generated HTML and CSS.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Fundamental Concepts: Understanding <code>display: grid</code></h2>
+        
+        <p>
+          Applying <code>display: grid</code> turns an element into a two-dimensional layout container. Unlike standard block elements or one-dimensional Flexbox containers, CSS Grid provides total control over both horizontal columns and vertical rows simultaneously.
+        </p>
+
+        <div class="explanation-cards">
+          <div class="card">
+            <h3>1. Grid Container &amp; Tracks</h3>
+            <p>
+              The direct outer parent element acts as the <strong>Grid Container</strong>. Structural tracks and gutters are defined using structural container properties:
+            </p>
+            <ul>
+              <li><strong><code>grid-template-columns</code>:</strong> Sets the width and total number of column tracks (e.g., <code>repeat(5, 1fr)</code>).</li>
+              <li><strong><code>grid-template-rows</code>:</strong> Defines the height and total number of row tracks.</li>
+              <li><strong><code>gap</code>:</strong> Specifies explicit gutter spacing between grid tracks without adding extra margin to the outer edges.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>2. Grid Items &amp; Coordinate Positioning</h3>
+            <p>
+              Direct children automatically become <strong>Grid Items</strong> placed along invisible coordinate lines:
+            </p>
+            <ul>
+              <li><strong>Grid Lines:</strong> Numbered index lines (starting at 1) that delineate track boundaries.</li>
+              <li><strong><code>grid-column</code> / <code>grid-row</code>:</strong> Defines where an item begins and how many tracks it spans across (e.g., <code>grid-column: 2 / span 3</code>).</li>
+              <li><strong>Cell Engulfment:</strong> When an item spans multiple cells, it occupies those intersections and visually covers the underlying tracks.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch, onMounted, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        const columnsCount = ref(5);
+        const rowsCount = ref(5);
+        const gap = ref(0);
+
+        // Scaling options
+        const isFullPage = ref(false);
+        const containerWidth = ref('100%');
+        const containerHeight = ref('500px');
+
+        const selectedTileIds = ref(new Set());
+        const tileStore = ref({});
+        const viewportRef = ref(null);
+
+        const isCssCopied = ref(false);
+        const isHtmlCopied = ref(false);
+
+        const isDragging = ref(false);
+        const dragStartTile = ref(null);
+        const dragCurrentTile = ref(null);
+
+        const rebuildGrid = () => {
+          let numberCounter = 1;
+          for (let r = 1; r <= rowsCount.value; r++) {
+            for (let c = 1; c <= columnsCount.value; c++) {
+              const id = `${r}_${c}`;
+              if (!tileStore.value[id]) {
+                tileStore.value[id] = {
+                  id,
+                  row: r,
+                  col: c,
+                  labelNumber: numberCounter,
+                  colSpan: 1,
+                  rowSpan: 1
+                };
+              } else {
+                const t = tileStore.value[id];
+                t.labelNumber = numberCounter;
+                t.colSpan = Math.min(t.colSpan, columnsCount.value - c + 1);
+                t.rowSpan = Math.min(t.rowSpan, rowsCount.value - r + 1);
+              }
+              numberCounter++;
+            }
+          }
+        };
+
+        watch([columnsCount, rowsCount], () => {
+          columnsCount.value = Math.max(1, Math.min(12, columnsCount.value || 1));
+          rowsCount.value = Math.max(1, Math.min(12, rowsCount.value || 1));
+          rebuildGrid();
+        }, { immediate: true });
+
+        const activeTiles = computed(() => {
+          const list = [];
+          for (let r = 1; r <= rowsCount.value; r++) {
+            for (let c = 1; c <= columnsCount.value; c++) {
+              const id = `${r}_${c}`;
+              if (tileStore.value[id]) {
+                list.push(tileStore.value[id]);
+              }
+            }
+          }
+          return list;
+        });
+
+        const engulfedTileIds = computed(() => {
+          const engulfed = new Set();
+          activeTiles.value.forEach(t => {
+            if (t.colSpan > 1 || t.rowSpan > 1) {
+              for (let r = t.row; r < t.row + t.rowSpan; r++) {
+                for (let c = t.col; c < t.col + t.colSpan; c++) {
+                  if (r === t.row && c === t.col) continue;
+                  engulfed.add(`${r}_${c}`);
+                }
+              }
+            }
+          });
+          return engulfed;
+        });
+
+        const visibleTiles = computed(() => 
+          activeTiles.value.filter(t => !engulfedTileIds.value.has(t.id))
+        );
+
+        const getTileFromEvent = (e) => {
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          const itemEl = target ? target.closest('[data-tile-id]') : null;
+          if (itemEl) {
+            const id = itemEl.getAttribute('data-tile-id');
+            return tileStore.value[id] || null;
+          }
+          return null;
+        };
+
+        const resetTileSpan = (tile) => {
+          if (!tile) return;
+          for (let r = tile.row; r < tile.row + tile.rowSpan; r++) {
+            for (let c = tile.col; c < tile.col + tile.colSpan; c++) {
+              const cellId = `${r}_${c}`;
+              if (tileStore.value[cellId]) {
+                tileStore.value[cellId].colSpan = 1;
+                tileStore.value[cellId].rowSpan = 1;
+              }
+            }
+          }
+          selectedTileIds.value.delete(tile.id);
+        };
+
+        const handlePointerDown = (e) => {
+          const tile = getTileFromEvent(e);
+          if (!tile) return;
+          
+          isDragging.value = true;
+          dragStartTile.value = tile;
+          dragCurrentTile.value = tile;
+        };
+
+        const handlePointerMove = (e) => {
+          if (!isDragging.value) return;
+          const tile = getTileFromEvent(e);
+          if (tile) {
+            dragCurrentTile.value = tile;
+          }
+        };
+
+        const endDrag = () => {
+          if (!isDragging.value) return;
+          isDragging.value = false;
+
+          if (dragStartTile.value && dragCurrentTile.value) {
+            const startTile = dragStartTile.value;
+            const endTile = dragCurrentTile.value;
+
+            // Handle Single-Click (Deselect or Select single tile)
+            if (startTile.id === endTile.id) {
+              if (selectedTileIds.value.has(startTile.id)) {
+                // Deselect merged/selected tile
+                resetTileSpan(startTile);
+              } else if (startTile.colSpan > 1 || startTile.rowSpan > 1) {
+                // Deselect tile if it spans multiple rows/cols
+                resetTileSpan(startTile);
+              } else {
+                // Select single cell
+                selectedTileIds.value.add(startTile.id);
+              }
+            } else {
+              // Handle Drag-to-Merge Selection
+              const minR = Math.min(startTile.row, endTile.row);
+              const maxR = Math.max(startTile.row, endTile.row);
+              const minC = Math.min(startTile.col, endTile.col);
+              const maxC = Math.max(startTile.col, endTile.col);
+
+              const targetWidth = (maxC - minC) + 1;
+              const targetHeight = (maxR - minR) + 1;
+
+              const intersectingTiles = activeTiles.value.filter(tile => {
+                const tileMaxR = tile.row + tile.rowSpan - 1;
+                const tileMaxC = tile.col + tile.colSpan - 1;
+                return !(tile.row > maxR || tileMaxR < minR || tile.col > maxC || tileMaxC < minC);
+              });
+
+              intersectingTiles.forEach(tile => resetTileSpan(tile));
+
+              const startId = `${minR}_${minC}`;
+              const originTile = tileStore.value[startId];
+
+              if (originTile) {
+                originTile.colSpan = targetWidth;
+                originTile.rowSpan = targetHeight;
+                selectedTileIds.value.add(originTile.id);
+              }
+            }
+          }
+
+          dragStartTile.value = null;
+          dragCurrentTile.value = null;
+        };
+
+        onMounted(() => {
+          window.addEventListener('pointerup', endDrag);
+        });
+
+        onUnmounted(() => {
+          window.removeEventListener('pointerup', endDrag);
+        });
+
+        const isTileInDragBox = (tile) => {
+          if (!isDragging.value || !dragStartTile.value || !dragCurrentTile.value) return false;
+          if (dragStartTile.value.id === dragCurrentTile.value.id) return false;
+
+          const minR = Math.min(dragStartTile.value.row, dragCurrentTile.value.row);
+          const maxR = Math.max(dragStartTile.value.row, dragCurrentTile.value.row);
+          const minC = Math.min(dragStartTile.value.col, dragCurrentTile.value.col);
+          const maxC = Math.max(dragStartTile.value.col, dragCurrentTile.value.col);
+
+          return tile.row >= minR && tile.row <= maxR && tile.col >= minC && tile.col <= maxC;
+        };
+
+        const activeSelectedTiles = computed(() =>
+          activeTiles.value.filter(t => selectedTileIds.value.has(t.id) && !engulfedTileIds.value.has(t.id))
+        );
+
+        const resetGrid = () => {
+          columnsCount.value = 5;
+          rowsCount.value = 5;
+          gap.value = 0;
+          isFullPage.value = false;
+          containerWidth.value = '100%';
+          containerHeight.value = '500px';
+          selectedTileIds.value.clear();
+          tileStore.value = {};
+          rebuildGrid();
+        };
+
+        const copyToClipboard = async (text, type) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            if (type === 'css') {
+              isCssCopied.value = true;
+              setTimeout(() => { isCssCopied.value = false; }, 2000);
+            } else if (type === 'html') {
+              isHtmlCopied.value = true;
+              setTimeout(() => { isHtmlCopied.value = false; }, 2000);
+            }
+          } catch (err) {
+            console.error('Failed to copy text: ', err);
+          }
+        };
+
+        const generatedCss = computed(() => {
+          const borderCss = gap.value === 0 
+            ? '  border: none;\n' 
+            : '  border: 1px solid #d1d5db;\n';
+
+          let baseSizingCss = '';
+
+          if (isFullPage.value) {
+            baseSizingCss = `* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.grid-container {
+  display: grid;
+  width: 100%;
+  height: 100%;`;
+          } else {
+            const w = containerWidth.value || '100%';
+            const h = containerHeight.value || '500px';
+
+            baseSizingCss = `.parent-container {
+  width: ${w};
+  height: ${h};
+}
+
+.grid-container {
+  display: grid;
+  width: 100%;
+  height: 100%;`;
+          }
+
+          let css = `<style>\n${baseSizingCss}\n  grid-template-columns: repeat(${columnsCount.value}, 1fr);\n  grid-template-rows: repeat(${rowsCount.value}, 1fr);\n  gap: ${gap.value}px;\n}\n\n.grid-item {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background-color: #f9fafb;\n${borderCss}}\n\n`;
+
+          if (activeSelectedTiles.value.length > 0) {
+            activeSelectedTiles.value.forEach(t => {
+              css += `.grid-item-${t.labelNumber} {\n  background-color: #e5e7eb;\n  color: #111827;\n  grid-column: ${t.col} / span ${t.colSpan};\n  grid-row: ${t.row} / span ${t.rowSpan};\n}\n\n`;
+            });
+          } else {
+            css += `/* Drag across tiles to select and merge them into CSS */\n`;
+          }
+
+          return css + `</style>`;
+        });
+
+        const generatedHtml = computed(() => {
+          if (activeSelectedTiles.value.length === 0) {
+            return `<!-- Drag across tiles to create grid areas -->`;
+          }
+
+          let html = '';
+          
+          if (!isFullPage.value) {
+            html += `<div class="parent-container">\n`;
+          }
+
+          html += `  <div class="grid-container">\n`;
+          activeSelectedTiles.value.forEach(t => {
+            html += `    <div class="grid-item grid-item-${t.labelNumber}">${t.labelNumber}</div>\n`;
+          });
+          html += `  </div>\n`;
+
+          if (!isFullPage.value) {
+            html += `</div>`;
+          }
+
+          return html.trim();
+        });
+
+        return {
+          columnsCount,
+          rowsCount,
+          gap,
+          isFullPage,
+          containerWidth,
+          containerHeight,
+          viewportRef,
+          visibleTiles,
+          selectedTileIds,
+          handlePointerDown,
+          handlePointerMove,
+          isTileInDragBox,
+          resetGrid,
+          generatedCss,
+          generatedHtml,
+          isCssCopied,
+          isHtmlCopied,
+          copyToClipboard
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!--CMPS3141-HCI - AS2-26S1
+Collaborators: None
+Date:03/09/26
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <script type="module">
+    import { createApp } from "https://mavue.mavo.io/mavue.js";
+
+    createApp(
+      {
+        data: {
+          tests: {
+            exam1: 94,
+            exam2: 86,
+          },
+          assessments: {
+            project: 87,
+            FExam: 91,
+          },
+          homeworks: [
+            { name: "Homework 1", score: 100 },
+            { name: "Homework 2", score: 96 },
+          ],
+        },
+
+        computed: {
+          homeworkAverage() {
+            const validScores = this.homeworks
+              .map((hw) => Number(hw.score))
+              .filter((score) => !isNaN(score) && score >= 0);
+
+            return validScores.length ? validScores.reduce((acc, val) => acc + val, 0) / validScores.length : 0;
+          },
+
+          calculatedGrade() {
+            const e1 = Number(this.tests.exam1) || 0;
+            const e2 = Number(this.tests.exam2) || 0;
+            const proj = Number(this.assessments.project) || 0;
+            const final = Number(this.assessments.FExam) || 0;
+
+            return (e1 * 0.15) + (e2 * 0.15) + (proj * 0.20) + (final * 0.30) + (this.homeworkAverage * 0.20);
+          },
+
+          letterGrade() {
+            const score = this.calculatedGrade;
+            if (score >= 95) return 'A+';
+            if (score >= 90) return 'A';
+            if (score >= 85) return 'B+';
+            if (score >= 80) return 'B';
+            if (score >= 75) return 'C+';
+            if (score >= 70) return 'C';
+            if (score >= 65) return 'D+';
+            if (score >= 60) return 'D';
+            return 'F';
+          }
+        },
+
+        watch: {
+          homeworks: {
+            handler(newVal) {
+              newVal.forEach((hw, index) => {
+                if (!hw.name || /^Homework \d+$/.test(hw.name.trim())) {
+                  hw.name = `Homework ${index + 1}`;
+                }
+              });
+            },
+            deep: true
+          }
+        },
+
+        methods: {
+          addHomework() {
+            this.homeworks.push({
+              name: `Homework ${this.homeworks.length + 1}`,
+              score: 100,
+            });
+          },
+
+          removeHomework(index) {
+            this.homeworks.splice(index, 1);
+          },
+        },
+
+        mounted() {
+          this.$nextTick(() => {
+            const loader = document.getElementById("loading-overlay");
+            if (loader) {
+              loader.classList.add("hidden");
+              setTimeout(() => loader.remove(), 500);
+            }
+          });
+        }
+      },
+      "#grade_calc"
+    );
+  </script>
+</head>
+<body>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="container">
+    <div id="grade_calc">
+      <h1>Grade Tracker</h1>
+
+      <div class="grade-display">
+        <div class="grade-label">Final Semester Grade:</div>
+        <div id="projectedGrade">{{ calculatedGrade.toFixed(1) }}%</div>
+        <div id="letterGrade">Letter Grade: {{ letterGrade }}</div>
+      </div>
+
+      <div class="section-title">Tests (15% each):</div>
+      <div class="form-group">
+        <label for="exam1">Test 1 Grade (%):</label>
+        <input id="exam1" class="input-medium" type="number" min="0" max="100" v-model.number="tests.exam1" placeholder="Enter Test 1 grade">
+      </div>
+      <div class="form-group">
+        <label for="exam2">Test 2 Grade (%):</label>
+        <input id="exam2" class="input-medium" type="number" min="0" max="100" v-model.number="tests.exam2" placeholder="Enter Test 2 grade">
+      </div>
+
+      <div class="section-title">Homework Assignments (20% total):</div>
+      <div id="homeworkList">
+        <div v-for="(hw, index) in homeworks" :key="index" class="homework-row">
+          <input type="text" class="input-name" v-model="hw.name" placeholder="HW Name">
+          <input type="number" class="input-score" min="0" max="100" v-model.number="hw.score" placeholder="Score (%)">
+          <button type="button" class="btn-remove" @click="removeHomework(index)">✕</button>
+        </div>
+      </div>
+      <button type="button" id="addHwBtn" @click="addHomework">+ Add Homework</button>
+
+      <div class="section-title">Group Project (20%):</div>
+      <div class="form-group">
+        <label for="project" class="padding-right-12">Overall Project Group Grade (%):</label>        
+        <input id="project" class="input-small" type="number" min="0" max="100" v-model.number="assessments.project" placeholder="Score (%)">
+      </div>
+
+      <div class="section-title">Final Exam (30%):</div>
+      <div class="form-group">
+        <label for="finalExam" class="padding-right-32">Final Exam Grade (%):</label>        
+        <input id="finalExam" class="input-small" type="number" min="0" max="100" v-model.number="assessments.FExam" placeholder="Score (%)">
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
