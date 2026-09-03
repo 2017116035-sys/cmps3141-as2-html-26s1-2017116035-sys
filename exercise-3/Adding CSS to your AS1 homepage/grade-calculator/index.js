@@ -19,9 +19,7 @@ createApp(
     },
 
     computed: {
-      /**
-       * Calculates average score across all valid non-negative homework entries.
-       */
+
       homeworkAverage() {
         let validScores = this.homeworks
           .map((hw) => Number(hw.score))
@@ -33,10 +31,7 @@ createApp(
         return sum / validScores.length;
       },
 
-      /**
-       * Calculates total grade based on CMPS3141 weighting criteria:
-       * Test 1 (15%), Test 2 (15%), Project (20%), Final Exam (30%), Homework (20%)
-       */
+
       calculatedGrade() {
         const e1 = Number(this.tests.exam1) || 0;
         const e2 = Number(this.tests.exam2) || 0;
@@ -47,9 +42,7 @@ createApp(
         return (e1 * 0.15) + (e2 * 0.15) + (proj * 0.20) + (final * 0.30) + (hwAvg * 0.20);
       },
 
-      /**
-       * Letter grade helper based on calculated percentage score.
-       */
+
       letterGrade() {
         const score = this.calculatedGrade;
         if (score >= 95) return 'A+';
@@ -65,9 +58,6 @@ createApp(
     },
 
     methods: {
-      /**
-       * Adds a new homework assignment item with a default score.
-       */
       addHomework() {
         this.homeworks.push({
           name: `Homework ${this.homeworks.length + 1}`,
@@ -75,9 +65,7 @@ createApp(
         });
       },
 
-      /**
-       * Removes a homework item by index.
-       */
+
       removeHomework(index) {
         this.homeworks.splice(index, 1);
       },
